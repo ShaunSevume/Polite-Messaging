@@ -1,0 +1,47 @@
+<h>
+Message-id: wtf is a sha-256 hash
+Time-sent: 1619206156
+From: timetest
+Contents: 2
+</h>
+Hello
+Timetest
+</e>
+<h>
+Message-id: yes
+Time-sent: 1619206156
+From: timetest
+Contents: 2
+</h>
+Hello
+Timetest
+</e>
+<h>
+Message-id: epic swag moment
+Time-sent: 1619212382
+From: Tumadre
+Contents: 2
+</h>
+Hello
+Timetest
+</e>
+<h>
+Message-id: epic swag moment
+Time-sent: 1619212423
+From: ya
+Contents: 2
+</h>
+Hello
+Timetest
+</e>
+<h>
+Message-id: SHA-256 bc18ecb5316e029af586fdec9fd533f413b16652bafe079b23e021a6d8ed69aa
+Time-sent: 1614686400
+From: martin.brain@city.ac.uk
+Topic: #announcements
+Subject: Hello!
+Contents: 2
+</h>
+Hello everyone!
+This is the first message sent using PM.
+</e>
