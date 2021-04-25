@@ -209,7 +209,7 @@ public class Server {
                         } else if(writing) {
                             //Do nothing
                         }else{
-                            out.println(inputLine); //Echoes back whatever (this might be a problem)
+                            out.println(inputLine); //Echoes back
                         }
 
                         //This block of code is triggered if the boolean 'writing' is set to true. This can only be the case if the "<h>" character sequence is received.

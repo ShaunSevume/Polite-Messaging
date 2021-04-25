@@ -4,8 +4,6 @@
     <list default="true" id="64ed0545-2f29-469a-aaab-0a2162562bc7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/messages.txt" beforeDir="false" afterPath="$PROJECT_DIR$/messages.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Message.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Server.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Server.java" afterDir="false" />
     </list>
@@ -87,15 +85,13 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
+    <configuration default="true" type="ArquillianJUnit" factoryName="" nameIsGenerated="true">
       <option name="arquillianRunConfiguration">
         <value>
           <option name="containerStateName" value="" />
         </value>
       </option>
-      <option name="TEST_OBJECT" value="CLASS" />
-      <properties />
-      <listeners />
+      <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -121,7 +117,8 @@
       <workItem from="1619110672496" duration="17529000" />
       <workItem from="1619145215903" duration="1359000" />
       <workItem from="1619204666334" duration="32359000" />
-      <workItem from="1619283205575" duration="33111000" />
+      <workItem from="1619283205575" duration="33426000" />
+      <workItem from="1619344735325" duration="1105000" />
     </task>
     <task id="LOCAL-00001" summary="GUI implemented but nothing works yet.">
       <created>1619300566169</created>
@@ -130,7 +127,14 @@
       <option name="project" value="LOCAL" />
       <updated>1619300566169</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="GUI Implemented and working.">
+      <created>1619343969019</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1619343969019</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -146,9 +150,11 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="GUI implemented but nothing works yet." />
-    <option name="LAST_COMMIT_MESSAGE" value="GUI implemented but nothing works yet." />
+    <MESSAGE value="GUI Implemented and working." />
+    <option name="LAST_COMMIT_MESSAGE" value="GUI Implemented and working." />
   </component>
 </project>

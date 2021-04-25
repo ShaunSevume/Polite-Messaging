@@ -20,7 +20,7 @@ public class Message {
     public void formatMsg(){
         //Format headers
         headers.add("<h>");
-        id = "wtf is a sha-256 hash";
+        id = "";
         addHeader("Message-id", id);
         addHeader("Time-sent", Long.toString(time));
         addHeader("From", from);
