@@ -1,5 +1,5 @@
 import java.io.*;
-import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
@@ -15,7 +15,7 @@ public class Server {
 
     public void start(int port) throws IOException {
         serverSocket = new ServerSocket(port); //Creates a socket and binds it to a port. ALL clients will have to connect through this port.
-        identifier = "Server @ " + Inet4Address.getLocalHost().getHostName();
+        identifier = "Server using " + InetAddress.getLocalHost().getHostName() + "@" + InetAddress.getLocalHost().getHostAddress();
         version = 1;
         while (true) //Forces the server to constantly listen for new connection requests (infinite loop)
             new ClientHandler(serverSocket.accept(),version,identifier).start();  //For each client that wants to connect to the server, a new thread is created to handle that connection. This way, the server can cater to multiple clients at once in parallel.
@@ -78,6 +78,7 @@ public class Server {
                                 writer = new FileWriter("messages.txt", true);
                             } catch (IOException e) {
                                 e.printStackTrace();
+                                break;
                             }
                         }
 
@@ -105,6 +106,7 @@ public class Server {
                                             out.println(readLine); //Sends back whatever line is currently being read from the txt file. This will be all the headers and body of the requested message.
                                             readLine = reader.readLine(); //Moves to the next line.
                                         }
+
                                         //out.println("</eOF>");
                                     }
                                 }
@@ -122,8 +124,29 @@ public class Server {
                         else if (inputLine.contains("LIST?")) {
                             //Gets the "since" time value and converts it to a long, and gets the number of headers.
                             String[] inputSplit = inputLine.split(" ");
+
+                            if(inputSplit.length != 3){ //Response invalid, therefore end the loop
+                                break;
+                            }
                             Long since = Long.parseLong(inputSplit[1]);
                             String headerNo = inputSplit[2];
+
+                            if(Integer.parseInt(headerNo) == 0){
+                                //Print all the messages.
+                                try {
+                                    reader = new BufferedReader(new FileReader("messages.txt"));
+                                    String currLine;
+                                    while ((currLine = reader.readLine()) != null) { //Reads the file until the end
+                                        if(!currLine.equals("<h>") && !currLine.equals("</h>") && !currLine.equals("</e>")){
+                                            out.println(currLine);
+                                            }
+                                        }
+                                    out.println("</eOF");
+                                }catch(IOException e){
+                                    e.printStackTrace();
+                                    break;
+                                }
+                            }
 
                             out.println(headerNo); //Returns the number of headers to the client to sync for loop execution number (this will be the number the integer 'i' will iterate up to on both sides).
                             Vector<String> headers = new Vector<>(); //A vector to store all the headers sent by the client since they will need to be computed at once.
@@ -179,10 +202,13 @@ public class Server {
 
                             } catch (IOException e) {
                                 e.printStackTrace();
+                                break;
                             }
 
 
-                        } else {
+                        } else if(writing) {
+                            //Do nothing
+                        }else{
                             out.println(inputLine); //Echoes back whatever (this might be a problem)
                         }
 

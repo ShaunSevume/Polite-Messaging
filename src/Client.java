@@ -9,7 +9,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
+import java.util.Vector;
 
 /*
 CLIENT WILL ESTABLISH A CONTINUOUS CONNECTION WITH SERVER, SEND MULTIPLE MESSAGES AND THEN ISSUE A TERMINATION REQUEST FOR THE SERVER.
@@ -33,13 +37,22 @@ public class Client extends javax.swing.JFrame{
     private javax.swing.JScrollPane outputScrollPane;
     private javax.swing.JToggleButton toggleMsg;
 
+    //Extra Components
+    private javax.swing.JButton addHead;
+    private javax.swing.JButton backBtn;
+    private javax.swing.JTextField inputHeader;
+    private javax.swing.JScrollPane outputHeaderScrollpane;
+    private javax.swing.JTextArea outputHeaders;
+    private javax.swing.JButton resetHead;
+
     public Client() throws IOException{
         //Asks the user to specify a username before connecting to the server. This is what will show up in the "from" header in any messages this client sends.
         String username = new JOptionPane().showInputDialog("Enter username/email address.");
         this.username = username;
         version = 1;
         initComponents();
-        startConnection("127.0.0.1", 20111);
+        String ip = new JOptionPane().showInputDialog("Enter ip address to connect to: ");
+        startConnection(ip, 20111);
     }
 
     public static void main(String args[]) {
@@ -95,6 +108,7 @@ public class Client extends javax.swing.JFrame{
 
         outputArea.setColumns(20);
         outputArea.setRows(5);
+        outputArea.setEditable(false);
         outputScrollPane.setViewportView(outputArea);
 
         toggleMsg.setText("MESSAGE");
@@ -169,11 +183,113 @@ public class Client extends javax.swing.JFrame{
     }// </editor-fold>
 
     private void hedEditActionPerformed(java.awt.event.ActionEvent evt) {
-        new EditHeaders().setVisible(true);
+        frameInit();
+        initComponents2();
     }
 
     private void SendBtnActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        if(toggleMsg.getText().equals("MESSAGE")) {
+            //Add body to the message
+            toBeSent.setText(inputArea.getText());
+
+            //Set the time
+            toBeSent.setTime(System.currentTimeMillis() / 1000L);
+
+            //Calculate SHA-256 sum.
+            String sum = "";
+            for(int i = 0; i < toBeSent.getHeaders().size();i++){
+                sum += toBeSent.getHeaders().elementAt(i).toString();
+            }
+            for(int i = 0; i < toBeSent.getBody().size();i++){
+                sum += toBeSent.getBody().elementAt(i);
+            }
+
+            MessageDigest digest = null;
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            byte[] encodedhash = digest.digest(sum.getBytes(StandardCharsets.UTF_8));
+
+            String sha = "Message-id: SHA-256 " + bytesToHex(encodedhash);
+            toBeSent.getHeaders().set(1,sha);
+
+            //Send all the headers
+            for (int i = 0; i < toBeSent.getHeaders().size(); i++) {
+                String currLine = toBeSent.getHeaders().elementAt(i).toString();
+                out.println(currLine);
+                if(!currLine.equals("<h>") && !currLine.equals("</h>")) { //The console shouldn't show these characters.
+                    outputArea.append(currLine);
+                    outputArea.append("\n");
+                }
+            }
+
+            //Send the body
+            for (int i = 0; i < toBeSent.getBody().size(); i++) {
+                //System.out.println(client.sendMessage(msg.getBody().elementAt(i).toString()));
+                String currLine = toBeSent.getBody().elementAt(i);
+                out.println(currLine);
+                if(!currLine.equals("</e>")) { //The console shouldn't show this character.
+                    outputArea.append(currLine);
+                    outputArea.append("\n");
+                }
+            }
+
+            inputArea.setText(""); //Clear input area
+            toBeSent.setBody(new Vector<String>()); //Clears the body but keeps the headers for a new message to be sent
+            toBeSent.getBody().add("</e>");
+
+        }
+
+        //Check for specific requests and call the respective methods.
+        if(toggleMsg.getText().equals("REQUEST")){
+            if(inputArea.getText().contains("TIME?")){
+                try {
+                    outputArea.append(inputArea.getText());
+                    outputArea.append("\n");
+                    outputArea.append(sendMessage(inputArea.getText()));
+                    outputArea.append("\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else if(inputArea.getText().contains("GET?")){
+                outputArea.append(inputArea.getText());
+                outputArea.append("\n");
+                try {
+                    getMessage(inputArea.getText());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else if(inputArea.getText().contains("LIST?")){
+                outputArea.append(inputArea.getText());
+                outputArea.append("\n");
+                try {
+                    listMessages(inputArea.getText());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else if(inputArea.getText().equals("BYE!")){
+                try {
+                    stopConnection();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            inputArea.setText(""); //Clears input area
+        }
+    }
+
+    private String bytesToHex(byte[] hash) {
+        StringBuilder hexString = new StringBuilder(2 * hash.length);
+        for (int i = 0; i < hash.length; i++) {
+            String hex = Integer.toHexString(0xff & hash[i]);
+            if(hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
     private void toggleMsgActionPerformed(java.awt.event.ActionEvent evt) {
@@ -185,8 +301,116 @@ public class Client extends javax.swing.JFrame{
             hedEdit.setVisible(true);
         }
     }
+
+    private void initComponents2() {
+
+        addHead = new javax.swing.JButton();
+        resetHead = new javax.swing.JButton();
+        backBtn = new javax.swing.JButton();
+        outputHeaderScrollpane = new javax.swing.JScrollPane();
+        outputHeaders = new javax.swing.JTextArea();
+        inputHeader = new javax.swing.JTextField();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(773, 491));
+
+        addHead.setText("Add Header");
+        addHead.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addHeadActionPerformed(evt);
+            }
+        });
+
+        resetHead.setText("Reset Headers");
+        resetHead.setMaximumSize(new java.awt.Dimension(107, 25));
+        resetHead.setMinimumSize(new java.awt.Dimension(107, 25));
+        resetHead.setPreferredSize(new java.awt.Dimension(107, 25));
+        resetHead.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                resetHeadActionPerformed(evt);
+            }
+        });
+
+        backBtn.setText("Back");
+        backBtn.setMaximumSize(new java.awt.Dimension(107, 25));
+        backBtn.setMinimumSize(new java.awt.Dimension(107, 25));
+        backBtn.setPreferredSize(new java.awt.Dimension(107, 25));
+        backBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                backBtnActionPerformed(evt);
+            }
+        });
+
+        outputHeaders.setEditable(false);
+        outputHeaders.setColumns(20);
+        outputHeaders.setRows(5);
+        outputHeaderScrollpane.setViewportView(outputHeaders);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(outputHeaderScrollpane, javax.swing.GroupLayout.DEFAULT_SIZE, 749, Short.MAX_VALUE)
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addComponent(inputHeader)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                        .addComponent(resetHead, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addComponent(backBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 119, Short.MAX_VALUE)
+                                                        .addComponent(addHead, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                                .addContainerGap())
+        );
+        layout.setVerticalGroup(
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(outputHeaderScrollpane, javax.swing.GroupLayout.DEFAULT_SIZE, 372, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addComponent(addHead)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(resetHead, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(backBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(inputHeader, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(10, 10, 10))
+        );
+
+        pack();
+        refreshHeads();
+
+    }// </editor-fold>
+
+    private void addHeadActionPerformed(java.awt.event.ActionEvent evt) {
+        toBeSent.getHeaders().add(toBeSent.getHeaders().size()-1,inputHeader.getText());
+        refreshHeads();
+        inputHeader.setText("");
+    }
+
+    private void resetHeadActionPerformed(java.awt.event.ActionEvent evt) {
+        newMsg();
+        refreshHeads();
+    }
+
+    private void backBtnActionPerformed(java.awt.event.ActionEvent evt) {
+        frameInit();
+        initComponents();
+
+    }
+
     public void startConnection(String ip, int port) throws IOException {
-        clientSocket = new Socket(ip, port);
+        try {
+            clientSocket = new Socket(ip, port); //Try to connect to the given ip address.
+        }catch(Exception e){
+            //If any exception is thrown, then the server failed to connect. In this case, terminate the program.
+            e.printStackTrace();
+            new JOptionPane().showMessageDialog(null,"Failed to connect!");
+            System.exit(0);
+        }
         identifier = username + " using " + Inet4Address.getLocalHost().getHostName() + " @ " + clientSocket.getInetAddress().getHostAddress();
         out = new PrintWriter(clientSocket.getOutputStream(), true); //Accesses output and input streams to write and read messages to and from the server.
         in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); //Client input stream is bound to server output stream and vice versa.
@@ -194,16 +418,23 @@ public class Client extends javax.swing.JFrame{
         //Handling the PROTOCOL? request.
         String protocol = "PROTOCOL? " + version + " " + identifier;
         out.println(protocol);
-        System.out.println(in.readLine());
+        outputArea.append(protocol);
+        outputArea.append("\n");
+        outputArea.append(in.readLine());
+        outputArea.append("\n");
         newMsg();
-    }
-
-    public String showOnGUI(String s){
-        return s;
     }
 
     public void newMsg(){
         toBeSent = new Message(username, "");
+    }
+
+    private void refreshHeads(){
+        outputHeaders.setText("");
+        for(int i = 0; i<toBeSent.getHeaders().size();i++){
+            outputHeaders.append(toBeSent.getHeaders().elementAt(i).toString());
+            outputHeaders.append("\n");
+        }
     }
 
     //Sends a message, prints the response.
@@ -218,17 +449,19 @@ public class Client extends javax.swing.JFrame{
         out.println(msg); //Sends over the ID of the message to look for.
         String resp = in.readLine(); //Gets the server's response.
         if(resp.equals("FOUND")){ //If this is received, then a match has been found, and now the client should listen to any subsequent lines sent from the server as they will contain the headers/body of the message that they requested.
-            System.out.println(resp);
+            outputArea.append(resp);
+            outputArea.append("\n");
             while(!resp.equals("</eOF>")){ //The client will now listen out for server responses until this character stream has been received, which signals that the server has reached the end of the file and is finished reading.
                 resp = in.readLine(); //The response will then be assigned to this string for processing by the client.
                 if(!resp.equals("</eOF>")) { //If the string is this character sequence then it means that the end of the file was reached.
-                    System.out.println(resp); //The response (which will be part of the requested message) is then printed.
+                    outputArea.append(resp); //The response (which will be part of the requested message) is then printed.
+                    outputArea.append("\n");
                 }
             }
         }else if(resp.equals("SORRY")){ //If this response is received, then the message was not found.
-            System.out.println(resp); //This response is then printed out.
-            out.println("It's okay <3"); //The client has to give a response to the server so...
-            out.println("Done!"); //The server will still send the "</eOF>" character sequence once it's reached the end of the file, so this is here to acknowledge that.
+            outputArea.append(resp); //This response is then printed out.
+            outputArea.append("\n");
+            in.readLine(); //Dealing with the "</eOF>"line that gets sent through.
         }
 
     }
@@ -236,29 +469,59 @@ public class Client extends javax.swing.JFrame{
     public void listMessages(String msg) throws IOException {
         //Check to see if the time is NOT in the future and the headers aren't 0.
         String[] msgSplit = msg.split(" ");
-        Long since = Long.parseLong(msgSplit[1]);
-        String headerNo = msgSplit[2];
-        if(since > (System.currentTimeMillis() / 1000L) || Integer.parseInt(headerNo) == 0){
-            System.out.println("Invalid time or header number.");
-        }else {
-            //System.out.println(msg);
+        Long since = -1L;
+        try{
+            since = Long.parseLong(msgSplit[1]);
+        }catch(NumberFormatException e){
+            //e.printStackTrace();
+        }
+
+        int headerNo = -1;
+        try{
+            headerNo = Integer.parseInt(msgSplit[2]);
+        }catch(NumberFormatException e){
+            //e.printStackTrace();
+        }
+
+        if(since > (System.currentTimeMillis() / 1000L) || since == -1L || headerNo < 0){
+           outputArea.append("Invalid time or header number.");
+           outputArea.append("\n");
+        }else if(headerNo == 0){
+            out.println(msg); //Sends the request to the server
+            String resp = in.readLine();
+            while(!resp.equals("</eOF")){
+                outputArea.append(resp);
+                outputArea.append("\n");
+                resp = in.readLine();
+            }
+        }
+        else {
             out.println(msg); //Sends the request to the server
             String resp = in.readLine(); //Receive server response
-            Scanner sc = new Scanner(System.in); //Request user input
+            try{
+                int i = Integer.parseInt(resp);
+            }catch(NumberFormatException e){
+                stopConnection(); //If this try-catch fails then the server failed to find a valid number or something, the request was invalid and therefore the connection should be stopped.
+            }
             for (int i = 0; i < Integer.parseInt(resp); i++) {
-                out.println(sc.nextLine()); //For the amount of headers specified to send, send that many headers over
+                String header = new JOptionPane().showInputDialog("Enter header " + (i+1));
+                out.println(header); //For the amount of headers specified to send, send that many headers over
+                outputArea.append(header);
+                outputArea.append("\n");
             }
             int count = 0;
             resp = in.readLine(); //Get server response
             if (resp.contains("MESSAGES")) { //It's highly unlikely it will never be this, but just in case, the check is there.
                 count = Integer.parseInt(resp.split(" ")[1]); //Assigns the number of messages to the 'count' variable
-                System.out.println(resp); //Also prints out the response
+                outputArea.append(resp); //Also prints out the response
+                outputArea.append("\n");
             }
 
             if (count > 0) { //If the count > 0 then there's messages to receive...
                 for (int i = 0; i < count; i++) {
                     resp = in.readLine(); //Each message-id will be read and then printed.
-                    System.out.println(resp);
+                    outputArea.append(resp);
+                    outputArea.append("\n");
                 }
             }
         }
@@ -269,159 +532,7 @@ public class Client extends javax.swing.JFrame{
         in.close();
         out.close();
         clientSocket.close();
-    }
-
-    public class EditHeaders extends javax.swing.JFrame {
-
-        public EditHeaders() {
-            try {
-                for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                    if ("Nimbus".equals(info.getName())) {
-                        javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                        break;
-                    }
-                }
-            } catch (ClassNotFoundException ex) {
-                java.util.logging.Logger.getLogger(EditHeaders.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-            } catch (InstantiationException ex) {
-                java.util.logging.Logger.getLogger(EditHeaders.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-            } catch (IllegalAccessException ex) {
-                java.util.logging.Logger.getLogger(EditHeaders.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-            } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-                java.util.logging.Logger.getLogger(EditHeaders.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-            }
-            initComponents();
-
-        }
-
-//        private void refreshMsg(){
-//            outputHeaders.setText("");
-//            for(int i = 0; i < toBeSent.getHeaders().size(); i++){
-//                outputHeaders.append(toBeSent.getHeaders().elementAt(i).toString());
-//            }
-//        }
-
-        private void initComponents() {
-
-            addHead = new javax.swing.JButton();
-            resetHead = new javax.swing.JButton();
-            closeBtn = new javax.swing.JButton();
-            outputHeaderScrollpane = new javax.swing.JScrollPane();
-            outputHeaders = new javax.swing.JTextArea();
-            inputHeader = new javax.swing.JTextField();
-
-            setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-            setLocationRelativeTo(null);
-
-            addHead.setText("Add Header");
-            addHead.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    addHeadActionPerformed(evt);
-                }
-            });
-
-            resetHead.setText("Reset Headers");
-            resetHead.setMaximumSize(new java.awt.Dimension(107, 25));
-            resetHead.setMinimumSize(new java.awt.Dimension(107, 25));
-            resetHead.setPreferredSize(new java.awt.Dimension(107, 25));
-            resetHead.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    resetHeadActionPerformed(evt);
-                }
-            });
-
-            closeBtn.setText("Close");
-            closeBtn.setMaximumSize(new java.awt.Dimension(107, 25));
-            closeBtn.setMinimumSize(new java.awt.Dimension(107, 25));
-            closeBtn.setPreferredSize(new java.awt.Dimension(107, 25));
-            closeBtn.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    closeBtnActionPerformed(evt);
-                }
-            });
-
-            outputHeaders.setEditable(false);
-            outputHeaders.setColumns(20);
-            outputHeaders.setRows(5);
-            outputHeaderScrollpane.setViewportView(outputHeaders);
-
-            javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-            getContentPane().setLayout(layout);
-            layout.setHorizontalGroup(
-                    layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                    .addContainerGap()
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(outputHeaderScrollpane, javax.swing.GroupLayout.DEFAULT_SIZE, 502, Short.MAX_VALUE)
-                                            .addGroup(layout.createSequentialGroup()
-                                                    .addComponent(inputHeader)
-                                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                                            .addComponent(resetHead, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                            .addComponent(closeBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 119, Short.MAX_VALUE)
-                                                            .addComponent(addHead, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                                    .addContainerGap())
-            );
-            layout.setVerticalGroup(
-                    layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                    .addContainerGap()
-                                    .addComponent(outputHeaderScrollpane, javax.swing.GroupLayout.DEFAULT_SIZE, 255, Short.MAX_VALUE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addGroup(layout.createSequentialGroup()
-                                                    .addComponent(addHead)
-                                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                    .addComponent(resetHead, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                    .addComponent(closeBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                            .addComponent(inputHeader, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGap(10, 10, 10))
-            );
-
-            pack();
-        }// </editor-fold>
-
-        private void closeBtnActionPerformed(java.awt.event.ActionEvent evt) {
-            dispose();
-        }
-
-        private void resetHeadActionPerformed(java.awt.event.ActionEvent evt) {
-            // TODO add your handling code here:
-        }
-
-        private void addHeadActionPerformed(java.awt.event.ActionEvent evt) {
-            // TODO add your handling code here:
-            inputHeader.setText("");
-        }
-
-        // Variables declaration - do not modify
-        private javax.swing.JButton addHead;
-        private javax.swing.JButton closeBtn;
-        private javax.swing.JTextField inputHeader;
-        private javax.swing.JScrollPane outputHeaderScrollpane;
-        private javax.swing.JTextArea outputHeaders;
-        private javax.swing.JButton resetHead;
-        // End of variables declaration
-    }
-
-    public Socket getClientSocket() {
-        return clientSocket;
-    }
-
-    public PrintWriter getOut() {
-        return out;
-    }
-
-    public BufferedReader getIn() {
-        return in;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
+        dispose();
+        System.exit(0);
     }
 }

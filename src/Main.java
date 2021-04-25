@@ -10,7 +10,8 @@ public class Main {
         //System.out.println("I am " + client.sendMessage(client.getUsername()));
 
         //System.out.println(client.sendMessage("TIME?"));
-        //client.getMessage("GET? SHA-256 big shaq");
+        client.getMessage("GET? SHA-256 big shaq");
+        client.getMessage("GET? SHA-256 big shaq");
         //client.getMessage("GET? SHA-256 bc18ecb5316e029af586fdec9fd533f413b16652bafe079b23e021a6d8ed69aa");
         //client.listMessages("LIST? 1619236022 1");
         //System.out.println(Inet4Address.getLocalHost().getHostName());

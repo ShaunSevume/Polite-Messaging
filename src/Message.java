@@ -22,7 +22,6 @@ public class Message {
         headers.add("<h>");
         id = "wtf is a sha-256 hash";
         addHeader("Message-id", id);
-        time = System.currentTimeMillis() / 1000L; // Set the time of the message to the current time.
         addHeader("Time-sent", Long.toString(time));
         addHeader("From", from);
         addHeader("Contents", Integer.toString(countLines(text)));
@@ -69,6 +68,11 @@ public class Message {
 
     public void setTime(long time) {
         this.time = time;
+        for(int i=0;i<headers.size();i++){
+            if(headers.elementAt(i).toString().contains("Time-sent:")){
+                headers.set(i, "Time-sent: " + Long.toString(time));
+            }
+        }
     }
 
     public String getFrom() {
@@ -85,6 +89,14 @@ public class Message {
 
     public void setText(String text) {
         this.text = text;
+        body = new Vector<String>(Arrays.asList(text.split("\\n"))); //Split the text by line and add to a vector.
+        body.add("</e>");
+
+        for(int i=0;i<headers.size();i++){
+            if(headers.elementAt(i).toString().contains("Contents:")){
+                headers.set(i, "Contents: " + countLines(text));
+            }
+        }
     }
 
     public Vector getHeaders() {
