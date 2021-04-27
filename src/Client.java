@@ -1,8 +1,5 @@
-import org.junit.jupiter.api.Test;
+ import javax.swing.*;
 
-import javax.swing.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,7 +9,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Scanner;
 import java.util.Vector;
 
 /*
@@ -463,7 +459,6 @@ public class Client extends javax.swing.JFrame{
             outputArea.append("\n");
             in.readLine(); //Dealing with the "</eOF>"line that gets sent through.
         }
-
     }
 
     public void listMessages(String msg) throws IOException {
